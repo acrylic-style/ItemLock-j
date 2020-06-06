@@ -61,7 +61,8 @@ public class ItemLock extends JavaPlugin implements Listener {
     }
 
     public static Map.Entry<String, ItemStack> setLock(@NotNull ItemStack itemStack, @NotNull UUID uuid, boolean force) {
-        NBTTagCompound tag = Paper.itemStack(itemStack).getOrCreateTag();
+        NBTTagCompound tag = Paper.itemStack(itemStack).hasTag() ? Paper.itemStack(itemStack).getTag() : Paper.itemStack(itemStack).getOrCreateTag();
+        if (tag == null) throw new NullPointerException();
         if (!force && tag.getMap().containsKey("lockUUID") && !tag.getMap().get("lockUUID").asString().equals(uuid.toString()))
             return new AbstractMap.SimpleEntry<>(ChatColor.RED + "他人のアイテムロックを上書きすることはできません。", itemStack);
         tag.getMap().put("lockUUID", new NBTTagString(uuid.toString()));

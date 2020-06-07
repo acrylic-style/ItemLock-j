@@ -9,6 +9,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -103,6 +104,14 @@ public class ItemLock extends JavaPlugin implements Listener {
         UUID lock = getLock(e.getItemInHand());
         if (lock == null) return;
         if (!e.getPlayer().getUniqueId().equals(lock)) e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onPlayerDropItem(PlayerDropItemEvent e) {
+        UUID lock = getLock(e.getItemDrop().getItemStack());
+        if (lock == null) return;
+        e.getItemDrop().setInvulnerable(true);
+        e.getItemDrop().setCanMobPickup(false);
     }
 
     @EventHandler

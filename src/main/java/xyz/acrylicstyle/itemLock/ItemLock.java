@@ -11,9 +11,12 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import util.CollectionList;
+import util.ICollectionList;
 import xyz.acrylicstyle.itemLock.commands.IFindCommand;
 import xyz.acrylicstyle.itemLock.commands.ILockCommand;
 import xyz.acrylicstyle.itemLock.commands.IUnlockCommand;
@@ -25,7 +28,9 @@ import xyz.acrylicstyle.paper.nbt.NBTTagString;
 import xyz.acrylicstyle.tomeito_api.TomeitoAPI;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -61,16 +66,8 @@ public class ItemLock extends JavaPlugin implements Listener {
         }
     }
 
-    public static Map.Entry<String, ItemStack> setLock(@NotNull ItemStack itemStack, @NotNull UUID uuid, boolean force) {
-        NBTTagCompound tag = Paper.itemStack(itemStack).hasTag() ? Paper.itemStack(itemStack).getTag() : Paper.itemStack(itemStack).getOrCreateTag();
-        if (tag == null) throw new NullPointerException();
-        if (!force && tag.getMap().containsKey("lockUUID") && !tag.getMap().get("lockUUID").asString().equals(uuid.toString()))
-            return new AbstractMap.SimpleEntry<>(ChatColor.RED + "他人のアイテムロックを上書きすることはできません。", itemStack);
-        tag.getMap().put("lockUUID", new NBTTagString(uuid.toString()));
-        ItemStackUtils utils = Paper.itemStack(itemStack);
-        utils.setTag(tag);
-        ItemStack item = utils.getItemStack();
-        item.setLore(Arrays.asList(
+    public static List<String> lore(UUID uuid) {
+        return Arrays.asList(
                 ChatColor.YELLOW + "データ: " + uuid.toString(),
                 "",
                 ChatColor.GOLD + "クラフトしたりしてアイテムが変わるとデータが削除されます。",
@@ -83,7 +80,35 @@ public class ItemLock extends JavaPlugin implements Listener {
                 "",
                 ChatColor.GREEN + "ロック: " + ChatColor.YELLOW + "/ilock",
                 ChatColor.LIGHT_PURPLE + "ロック解除: " + ChatColor.YELLOW + "/iunlock"
-        ));
+        );
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public static void addLore(UUID uuid, ItemMeta meta) {
+        CollectionList<String> lore = ICollectionList.asList(meta.hasLore() ? meta.getLore() : new ArrayList<>());
+        lore.addAll(lore(uuid));
+        meta.setLore(lore);
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public static void removeLore(UUID uuid, ItemMeta meta) {
+        CollectionList<String> lore = ICollectionList.asList(meta.hasLore() ? meta.getLore() : new ArrayList<>()).reverse();
+        ICollectionList.asList(lore(uuid)).reverse().forEach(lore::remove);
+        meta.setLore(lore.size() == 0 ? null : lore.reverse());
+    }
+
+    public static Map.Entry<String, ItemStack> setLock(@NotNull ItemStack itemStack, @NotNull UUID uuid, boolean force) {
+        NBTTagCompound tag = Paper.itemStack(itemStack).hasTag() ? Paper.itemStack(itemStack).getTag() : Paper.itemStack(itemStack).getOrCreateTag();
+        if (tag == null) throw new NullPointerException();
+        if (!force && tag.getMap().containsKey("lockUUID") && !tag.getMap().get("lockUUID").asString().equals(uuid.toString()))
+            return new AbstractMap.SimpleEntry<>(ChatColor.RED + "他人のアイテムロックを上書きすることはできません。", itemStack);
+        tag.getMap().put("lockUUID", new NBTTagString(uuid.toString()));
+        ItemStackUtils utils = Paper.itemStack(itemStack);
+        utils.setTag(tag);
+        ItemStack item = utils.getItemStack();
+        ItemMeta meta = item.getItemMeta();
+        addLore(uuid, meta);
+        item.setItemMeta(meta);
         return new AbstractMap.SimpleEntry<>(ChatColor.GREEN + "アイテムロックを設定しました。", item);
     }
 
@@ -95,7 +120,9 @@ public class ItemLock extends JavaPlugin implements Listener {
         ItemStackUtils utils = Paper.itemStack(itemStack);
         utils.setTag(tag);
         ItemStack item = utils.getItemStack();
-        item.setLore(null);
+        ItemMeta meta = item.getItemMeta();
+        removeLore(uuid, meta);
+        item.setItemMeta(meta);
         return new AbstractMap.SimpleEntry<>(ChatColor.GREEN + "アイテムロックを削除しました。", item);
     }
 

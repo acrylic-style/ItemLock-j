@@ -1,4 +1,4 @@
-package xyz.acrylicstyle.itemLock.commands;
+package xyz.acrylicstyle.itemlock.commands;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -9,14 +9,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xyz.acrylicstyle.itemLock.ItemLock;
-import xyz.acrylicstyle.tomeito_api.command.PlayerCommandExecutor;
+import xyz.acrylicstyle.itemlock.ItemLock;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class IUnlockCommand extends PlayerCommandExecutor implements TabCompleter {
+public class IUnlockCommand implements PlayerCommandExecutor, TabCompleter {
     @Override
     public void onCommand(Player player, String[] args) {
         ItemStack item = player.getInventory().getItemInMainHand();
@@ -26,7 +25,7 @@ public class IUnlockCommand extends PlayerCommandExecutor implements TabComplete
         }
         boolean force = false;
         if (args.length > 0 && args[0].equalsIgnoreCase("force")) {
-            if (player.isOp()) force = true;
+            if (player.hasPermission("itemlock.op")) force = true;
         }
         Map.Entry<String, ItemStack> entry = ItemLock.unlock(item, player.getUniqueId(), force);
         player.getInventory().setItemInMainHand(entry.getValue());
